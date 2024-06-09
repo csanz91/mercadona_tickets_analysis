@@ -23,6 +23,7 @@
 	let priceGraph = null;
 	let chartOptions = {
 		responsive: true,
+		maintainAspectRatio: false,
 		scales: {
 			x: {
 				type: 'time',
@@ -132,8 +133,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
-		height: 100vh;
+		justify-content: space-between;
 	}
 
 	select {
@@ -149,7 +149,7 @@
 	}
 
 	.chart-container {
-		height: 800px; /* Increase height for larger graph */
+		height: 300px; /* Increase height for larger graph */
 		width: 100%;
 		max-width: 1000px; /* Increase max width for larger graph */
 	}
