@@ -70,7 +70,9 @@
 
 		<h2>
 			Productos Populares
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip
+				text="Esta lista muestra los productos que se han comprado más veces. Un valor de 20 significa que, en total, el producto se ha comprado 20 veces en todas las visitas al supermercado."
+			/>
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.popular_products) as [product, count]}
@@ -83,7 +85,9 @@
 
 		<h2>
 			Mayores Reducciones de Precios
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip
+				text="Esta lista muestra los productos que han experimentado un mayor descenso en su precio desde el inicio. Junto a cada producto, se indica la diferencia de precio entre la primera y la última compra."
+			/>
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.top_prices_reductions) as [product, details]}
@@ -101,7 +105,9 @@
 
 		<h2>
 			Mayores Aumentos de Precios
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip
+				text="Esta lista muestra los productos que han experimentado un mayor incremento en su precio desde el inicio. Junto a cada producto, se indica la diferencia de precio entre la primera y la última compra."
+			/>
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.top_prices_increses) as [product, details]}
@@ -119,7 +125,9 @@
 
 		<h2>
 			Productos Más Frecuentes
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip
+				text="Este porcentaje indica la frecuencia con la que se compra un artículo en cada visita al supermercado. Por ejemplo, un 80% significa que de cada 10 visitas, el producto se compra en 8 ocasiones."
+			/>
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.most_frequent_products) as [product, frequency]}
@@ -132,7 +140,7 @@
 
 		<h2>
 			Productos Más Caros
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip text="Productos que mas dinero han costado." />
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.most_expensive_products) as [product, price]}
@@ -145,7 +153,7 @@
 
 		<h2>
 			Productos Más Baratos
-			<HelpTooltip text="Estos son los productos más comprados en términos de cantidad." />
+			<HelpTooltip text="Productos que menos dinero han costado." />
 		</h2>
 		<ul class="product-list">
 			{#each Object.entries(tickets_analysis.chepeast_products) as [product, price]}
@@ -155,6 +163,10 @@
 				</li>
 			{/each}
 		</ul>
+	</main>
+{:else}
+	<main>
+		<p>Suba los tickets de la compra desde el panel de la izquierda.</p>
 	</main>
 {/if}
 

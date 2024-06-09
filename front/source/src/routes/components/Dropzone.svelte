@@ -41,7 +41,7 @@
 </script>
 
 <form bind:this={wrapper} class="dropzone">
-	<div class="dz-message">Arrastra aqui los ficheros .pdf</div>
+	<div class="dz-message">Arrastre aqui los tickets en .pdf</div>
 </form>
 
 <style>
