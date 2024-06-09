@@ -22,17 +22,41 @@
 		{:else if $currentView === 'graph'}
 			<Graph />
 		{/if}
+		<footer>
+			<div>
+				Cesar Sanz Martinez - <a href="mailto:cesarsanz91@gmail.com">cesarsanz91@gmail.com</a> - 2024
+				- Open to Work!
+			</div>
+			<div>
+				Visita <a href="https://github.com/csanz91/mercadona_tickets_analysis">Github</a> para obtener
+				el codigo fuente de esta pagina
+			</div>
+		</footer>
 	</div>
 </div>
 
 <style>
 	.app-container {
 		display: flex;
+		flex-direction: column;
 		min-height: 100vh;
 	}
+
 	.content {
+		flex: 1;
 		margin-left: 200px; /* Width of the sidebar */
 		padding: 2em;
-		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	footer {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		padding: 12px;
+	}
 	}
 </style>
