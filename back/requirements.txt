@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pymupdf
+pandas
+fastapi-sessions
+-e libs/docker_secrets
