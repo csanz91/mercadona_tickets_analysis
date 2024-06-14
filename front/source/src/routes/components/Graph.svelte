@@ -66,6 +66,7 @@
 
 	async function fetchProducts() {
 		products = await getProducts();
+		products.sort((a, b) => a.localeCompare(b));
 	}
 
 	async function fetchPriceGraph() {
