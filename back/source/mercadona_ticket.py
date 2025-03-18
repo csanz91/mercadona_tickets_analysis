@@ -7,7 +7,10 @@ import pandas as pd
 import re
 import os
 from dataclasses import dataclass
-from re import Match
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -27,17 +30,19 @@ class Ticket:
     products: list[Product]
 
 
-pattern_product = r"^([\d])[ \n]{1}([\w|\W][^\n]+)\n([\d]+,[\d]+)?\n?([\d]+,[\d]+)\n$"
-pattern_bulk_product_a = r"^([\d])[ \n]{1}([\w|\W][^\n]+)\n$"
-pattern_bulk_product_b = r"^([\d]+,[\d]+)\ kg\n([\d]+,[\d]+)\ €/kg\n([\d]+,[\d]+)\n$"
+pattern_product = (
+    r"\n([\d]+)[ \n]{1}([\w|\W][^\n]+)\n(?!.* kg)([\d]+,[\d]+)?\n?([\d]+,[\d]+)"
+)
+pattern_bulk_product = (
+    r"\n([\w|\W][^\n]+)\n([\d]+,[\d]+)\ kg\n([\d]+,[\d]+)\ €/kg\n([\d]+,[\d]+)"
+)
 pattern_total_price = r"Importe:\ ([\d]+,[\d]+)\ €"
 pattern_ticket_number = r"FACTURA SIMPLIFICADA:\ ([\d-]+)\n"
 pattern_datetime = r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})"
-pattern_credit_card = r"^TARJ. BANCARIA:  \*\*\*\*\ \*\*\*\*\ \*\*\*\*\ ([\d]{4})\n"
+pattern_credit_card = r"TARJ\. BANCARIA:[* ]+ (\d+)\n"
 
 p_product = re.compile(pattern_product)
-p_bulk_product_a = re.compile(pattern_bulk_product_a)
-p_bulk_product_b = re.compile(pattern_bulk_product_b)
+p_bulk_product = re.compile(pattern_bulk_product)
 p_total_price = re.compile(pattern_total_price)
 p_ticket_number = re.compile(pattern_ticket_number)
 p_datetime = re.compile(pattern_datetime)
@@ -49,63 +54,46 @@ def price_to_float(text_price) -> float:
 
 
 def get_product(text):
-    match: Match[str] | None = p_product.match(text)
-    if not match:
-        return None
+    products = []
+    matches: re.Match[str] | None = p_product.finditer(text)
+    for match in matches:
+        qty, name, unitary_price, total_price = match.groups()
 
-    qty, name, unitary_price, total_price = match.groups()
+        total_price = price_to_float(total_price)
+        if unitary_price is not None:
+            unitary_price = price_to_float(unitary_price)
+        else:
+            unitary_price = total_price
 
-    total_price = price_to_float(total_price)
-    if unitary_price is not None:
-        unitary_price = price_to_float(unitary_price)
-    else:
-        unitary_price = total_price
-
-    product = Product(
-        qty=price_to_float(qty),
-        name=name,
-        unitary_price=unitary_price,
-        total_price=total_price,
-    )
-
-    return product
-
-
-def get_bulk_product_a(text):
-    match: Match[str] | None = p_bulk_product_a.match(text)
-    if not match:
-        return None
-
-    qty, name = match.groups()
-
-    product = Product(
-        qty=price_to_float(qty),
-        name=name,
-        unitary_price=-1.0,
-        total_price=-1.0,
-    )
-    return product
+        product = Product(
+            qty=price_to_float(qty),
+            name=name,
+            unitary_price=unitary_price,
+            total_price=total_price,
+        )
+        products.append(product)
+    return products
 
 
-def get_bulk_product_b(text, temp_product):
+def get_bulk_products(text):
+    products = []
+    matches: re.Match[str] | None = p_bulk_product.finditer(text)
+    for match in matches:
+        name, weight, price_per_kg, total_price = match.groups()
 
-    match = p_bulk_product_b.match(text)
-    if not match:
-        return None
+        product = Product(
+            qty=price_to_float(weight),
+            name=name,
+            unitary_price=price_to_float(price_per_kg),
+            total_price=price_to_float(total_price),
+        )
+        products.append(product)
 
-    if temp_product is None:
-        raise ValueError("No se ha encontrado el nombre del producto a granel")
-
-    weight, price_per_kg, total_price = match.groups()
-    temp_product.qty = price_to_float(weight)
-    temp_product.unitary_price = price_to_float(price_per_kg)
-    temp_product.total_price = price_to_float(total_price)
-
-    return temp_product
+    return products
 
 
 def get_ticket_cost(text):
-    match = p_total_price.match(text)
+    match = p_total_price.search(text)
     if not match:
         return None
     price = match.group(1)
@@ -113,7 +101,7 @@ def get_ticket_cost(text):
 
 
 def get_ticket_number(text):
-    match = p_ticket_number.match(text)
+    match = p_ticket_number.search(text)
     if not match:
         return None
     ticket_number = match.group(1)
@@ -121,7 +109,7 @@ def get_ticket_number(text):
 
 
 def get_ticket_datetime(text):
-    match = p_datetime.match(text)
+    match = p_datetime.search(text)
     if not match:
         return None
     date = match.group(1)
@@ -129,7 +117,7 @@ def get_ticket_datetime(text):
 
 
 def get_credit_card(text):
-    match = p_credit_card.match(text)
+    match = p_credit_card.search(text)
     if not match:
         return None
     credit_card = match.group(1)
@@ -137,57 +125,18 @@ def get_credit_card(text):
 
 
 def get_ticket(pdf_document) -> Ticket:
-
-    ticket = Ticket("", 0.0, "", datetime.now(), [])
-    temp_product = None
-
     # Extract text blocks from the first page
     page = pdf_document[0]
     blocks = page.get_text("blocks")
-    for block in blocks:
-        x0, y0, x1, y1, text, block_no, x = block
+    text = "".join([block[4] for block in blocks])
 
-        # Get a product
-        product = get_product(text)
-        if product:
-            ticket.products.append(product)
-            continue
-
-        # Get the qty and name of a bulk product
-        bulk_product = get_bulk_product_a(text)
-        if bulk_product:
-            temp_product = bulk_product
-            continue
-
-        # Get the weight and price of a bulk product
-        bulk_product = get_bulk_product_b(text, temp_product)
-        if bulk_product:
-            ticket.products.append(bulk_product)
-            continue
-
-        # Get the total ticket cost
-        ticket_cost = get_ticket_cost(text)
-        if ticket_cost:
-            ticket.total_cost = ticket_cost
-            continue
-
-        # Get the ticket number
-        ticket_number = get_ticket_number(text)
-        if ticket_number:
-            ticket.number = ticket_number
-            continue
-
-        # Get the ticket date
-        ticket_date = get_ticket_datetime(text)
-        if ticket_date:
-            ticket.date = ticket_date
-            continue
-
-        # Get the ticket credit card
-        credit_card = get_credit_card(text)
-        if credit_card:
-            ticket.credit_card = credit_card
-            continue
+    ticket = Ticket(
+        get_ticket_number(text),
+        get_ticket_cost(text),
+        get_credit_card(text),
+        get_ticket_datetime(text),
+        get_product(text) + get_bulk_products(text),
+    )
 
     # Make sure the full ticket has been processed correctly
     if (
@@ -206,7 +155,6 @@ def get_ticket(pdf_document) -> Ticket:
 
 
 def ticket_to_pandas(tickets: Ticket | list[Ticket]) -> pd.DataFrame:
-
     if not isinstance(tickets, list):
         tickets = [tickets]
 
@@ -260,7 +208,6 @@ def ticket_from_file(file: BinaryIO):
 
 
 def folder_to_pandas(folder: str) -> pd.DataFrame:
-
     tickets: list[Ticket] = []
     for filename in os.listdir(folder):
         if filename.endswith(".pdf"):

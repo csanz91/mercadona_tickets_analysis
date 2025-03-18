@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import { get } from 'svelte/store'
 import { session_id } from './stores';
 
-
+// const server_url = "http://localhost:8089";
 const server_url = "api"
 
 export const upload_files_url = `${server_url}/upload-tickets`

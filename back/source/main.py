@@ -28,7 +28,8 @@ logger.addHandler(handler)
 app = FastAPI()
 
 # origins = [
-#     "http://172.26.80.72:5173",
+#     "http://localhost:8088",
+#     "http://localhost:8089",
 # ]
 
 # app.add_middleware(
