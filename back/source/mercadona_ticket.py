@@ -55,7 +55,11 @@ def price_to_float(text_price) -> float:
 
 def get_product(text):
     products = []
-    matches: re.Match[str] | None = p_product.finditer(text)
+    matches = p_product.finditer(text)
+    if not matches:
+        logger.error("No product matches found")
+        return products
+    
     for match in matches:
         qty, name, unitary_price, total_price = match.groups()
 
@@ -77,7 +81,11 @@ def get_product(text):
 
 def get_bulk_products(text):
     products = []
-    matches: re.Match[str] | None = p_bulk_product.finditer(text)
+    matches = p_bulk_product.finditer(text)
+    if not matches:
+        logger.error("No bulk product matches found")
+        return products
+
     for match in matches:
         name, weight, price_per_kg, total_price = match.groups()
 
@@ -95,7 +103,7 @@ def get_bulk_products(text):
 def get_ticket_cost(text):
     match = p_total_price.search(text)
     if not match:
-        return None
+        return 0.0
     price = match.group(1)
     return price_to_float(price)
 
@@ -103,7 +111,7 @@ def get_ticket_cost(text):
 def get_ticket_number(text):
     match = p_ticket_number.search(text)
     if not match:
-        return None
+        return ""
     ticket_number = match.group(1)
     return ticket_number
 
@@ -111,7 +119,7 @@ def get_ticket_number(text):
 def get_ticket_datetime(text):
     match = p_datetime.search(text)
     if not match:
-        return None
+        return datetime.min
     date = match.group(1)
     return datetime.strptime(date, "%d/%m/%Y %H:%M")
 
@@ -119,7 +127,7 @@ def get_ticket_datetime(text):
 def get_credit_card(text):
     match = p_credit_card.search(text)
     if not match:
-        return None
+        return ""
     credit_card = match.group(1)
     return credit_card
 
@@ -145,11 +153,19 @@ def get_ticket(pdf_document) -> Ticket:
         or not ticket.products
         or not ticket.date
     ):
+        logger.error(
+            f"Ticket data is incomplete: {ticket.number}, {ticket.total_cost}, {ticket.products}, {ticket.date}"
+        )
+        logger.error(f"Text: {text}")
         raise ValueError("Incomplete ticket data")
 
     if not math.isclose(
         sum(p.total_price for p in ticket.products), ticket.total_cost, rel_tol=1e-2
     ):
+        logger.error(
+            f"Total price mismatch: {ticket.total_cost} != {sum(p.total_price for p in ticket.products)}"
+        )
+        logger.error(f"Text: {text}")
         raise ValueError("Total price mismatch")
     return ticket
 
