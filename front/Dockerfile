@@ -1,5 +1,5 @@
 # Use the official Node.js image as the base image
-FROM node:20.10-bookworm-slim as build
+FROM node:20.10-bookworm-slim AS build
 
 # Set the working directory
 WORKDIR /app
@@ -25,4 +25,4 @@ ENV HOST=0.0.0.0
 ENV PORT=80
 EXPOSE 80
 
-CMD ["node","build"]
+CMD ["node", "build"]

@@ -1,0 +1,14 @@
+[project]
+name = "mercadona-tickets-analysis"
+version = "0.1.0"
+description = "Mercadona Tickets Analysis"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pymupdf",
+    "pandas",
+    "fastapi-sessions",
+    "dockersecrets @ git+https://github.com/csanz91/docker_secrets",
+    "python-multipart",
+]
